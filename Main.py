@@ -48,7 +48,7 @@ async def reload(ctx, extension=None):
             return await ctx.send(f"{extension} 을 리로드할 수 없습니다.\n{e}")
         return await ctx.send(f":white_check_mark: {extension}을(를) 리로드함.")
 
-f = open("C:\\Users\\PC\Desktop\\Casper\\Discord_Bot\\GGonnyang\\Ver2\\token.txt", "r")
+f = open("C:\\Users\\PC\Desktop\\Casper\\Git\\GGonnyang\\token.txt", "r")
 token = f.readline()
 f.close()
 APP.run(token)
