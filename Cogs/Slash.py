@@ -5,7 +5,7 @@ class slash(commands.Cog):
     def __init__(self, APP):
         self.APP = APP
         
-    @cog_ext.cog_slash(name="fish")
+    @cog_ext.cog_slash(name="SLASH")
     async def fishing(self, ctx: SlashContext):
         return await ctx.send("GOOD")
 
