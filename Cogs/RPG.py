@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
-from RPG.help_command import HELP
-from RPG.character import load_Character
+from RPG_func.help_command import HELP
+from RPG_func.character import load_Character
 
 class RPG(commands.Cog):
     def __init__(self, APP):
