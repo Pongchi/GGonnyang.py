@@ -1,11 +1,9 @@
 import asyncio, discord, os
 import discord.ext.commands as commands
 from discord.ext.commands import CommandNotFound, MissingRequiredArgument
-from discord_slash import SlashCommand
 
 intents = discord.Intents.all()
 APP = commands.Bot(command_prefix="$", intents=intents)
-slash = SlashCommand(APP, sync_commands=True, sync_on_cog_reload=True)
 abs_cogs_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "Cogs")
 
 for filename in os.listdir(abs_cogs_path):
