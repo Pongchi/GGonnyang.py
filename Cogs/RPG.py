@@ -19,27 +19,33 @@ def getMonster(place):
     if place == "푸른 초원":
         return "슬라임"
     return "몬스터"
+
+def isGoPlace(userLV, place):
+    return True
+
 ################################################################################
 class PLAYER:
     def __init__(self, info):
-        self.USER = info[-1]
-        self.LV = info[6]//30
-        self.NAME = info[1]
-        self.STR = info[2]
-        self.DEF = info[3]
+        self.type=info["type"]
+        self.USER = info["info"]
+        self.LV = info["exp"]//30
+        self.NAME = info["name"]
+        self.STR = info["str"]
+        self.DEF = info["def"]
         self.HP = 20 + int((self.STR * 0.5 + self.DEF * int(self.STR * 0.25)) * 2.5)
         self.MAX_HP = self.HP
-        self.AP = info[4]
+        self.AP = info["ap"]
         self.SP = 0
-        self.AGI = info[5]
+        self.money = info["money"]
+        self.AGI = info["agi"]
+        if self.type == "entity":
+            self.value = info["value"]
+            self.attribute = info["attr"]
         
         
     def getData(self, data):
         with open(f".\\Cogs\\RPG\\PLAYER\\{self.USER.id}\\{data}.json") as f:
             return json.load(f)
-
-
-
 
 class GAME:
     def __init__(self, p1, p2):
@@ -75,13 +81,15 @@ class RPG(commands.Cog):
         return await ctx.author.send(embed=HELP("모험"))
 
     @Adventure.command(name="시작")
-    async def Adventure_Start(self, ctx):
+    async def Adventure_Start(self, ctx, place):
         await ctx.message.delete()
         user = load_Character(ctx.author.id)
         if not user:
             return await ctx.send("캐릭터부터 생성해주세요! $캐릭터 생성")
-        
-        ROOM = GAME(user, "")
+        elif not isGoPlace(user[0], place):
+            return await ctx.send("없는 장소거나 캐릭터의 레벨이 부족합니다!")
+
+        ROOM = GAME(user, getMonster(place))
         
         
 
