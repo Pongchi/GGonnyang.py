@@ -1,4 +1,4 @@
-import discord, json
+import discord, json, pymysql
 from discord.ext import commands
 
 def load_Character(id):
@@ -15,13 +15,18 @@ def HELP(cmd):
 
     return embed
 
-def getMonster(place):
+def getMonster(place): # {type:"entity"}
     if place == "푸른 초원":
         return "슬라임"
     return "몬스터"
 
 def isGoPlace(userLV, place):
     return True
+
+def getData(id):
+        with open(f".\\Cogs\\RPG\\PLAYER\\{id}.json") as f:
+            data = json.load(f)
+            return (data['skills'], data['item'])
 
 ################################################################################
 class PLAYER:
@@ -41,16 +46,23 @@ class PLAYER:
         if self.type == "entity":
             self.value = info["value"]
             self.attribute = info["attr"]
-        
-        
-    def getData(self, data):
-        with open(f".\\Cogs\\RPG\\PLAYER\\{self.USER.id}\\{data}.json") as f:
-            return json.load(f)
+        else:
+            self.skills, self.item = getData(info['id'])
+
+    def showStatus():
+        return ""
 
 class GAME:
-    def __init__(self, p1, p2):
+    async def __init__(self, channel, p1, p2):
+        self.channel = channel
         self.P1 = PLAYER(p1)
         self.P2 = PLAYER(p2)
+
+        self.msg1 = await channel.send(embed=self.P2.showStatus())
+        if self.P2.type != "entity":
+            self.msg2 = await channel.send(embed=self.P1.showStatus())
+
+    
 ##########################################################################################
 
 
@@ -89,7 +101,7 @@ class RPG(commands.Cog):
         elif not isGoPlace(user[0], place):
             return await ctx.send("없는 장소거나 캐릭터의 레벨이 부족합니다!")
 
-        ROOM = GAME(user, getMonster(place))
+        ROOM = GAME(ctx.channel, user, getMonster(place))
         
         
 
