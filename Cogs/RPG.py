@@ -23,8 +23,8 @@ def getMonster(place): # {type:"entity"}
 def isGoPlace(userLV, place):
     return True
 
-def getData(id):
-        with open(f".\\Cogs\\RPG\\PLAYER\\{id}.json") as f:
+def getData(who, id):
+        with open(f".\\Cogs\\RPG\\{who}\\{id}.json") as f:
             data = json.load(f)
             return (data['skills'], data['item'])
 
@@ -40,17 +40,27 @@ class PLAYER:
         self.HP = 20 + int((self.STR * 0.5 + self.DEF * int(self.STR * 0.25)) * 2.5)
         self.MAX_HP = self.HP
         self.AP = info["ap"]
-        self.SP = 0
         self.money = info["money"]
         self.AGI = info["agi"]
         if self.type == "entity":
             self.value = info["value"]
             self.attribute = info["attr"]
+            self.img_url = getData("MONSTER", info['id'])
         else:
-            self.skills, self.item = getData(info['id'])
+            self.skills, self.item, self.img_url = getData("PLAYER", info['id'])
 
-    def showStatus():
-        return ""
+    def showStatus(self):
+        embed=discord.Embed(color=0xd2e864)
+        embed.set_thumbnail(url=f"{self.img_url}")
+        embed.add_field(name=f"{self.NAME}", value=f"Lv.{self.LV}", inline=False)
+        embed.add_field(name="[ HP ]", value=f"{self.showHP()}", inline=False)
+        return embed
+
+    def showHP(self):
+        if self.HP <= 0:
+            self.HP = 0
+        rate = int((self.HP / self.MAX_HP * 100) // 10)
+        return f"{rate * ':red_square:'}{(10-rate) * ':white_large_square:'}\n( {self.HP} / {self.MAX_HP} )"
 
 class GAME:
     async def __init__(self, channel, p1, p2):
