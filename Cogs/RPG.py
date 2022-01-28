@@ -1,9 +1,17 @@
+from ast import Or
+from base64 import encode
 import discord, json, pymysql
 from discord.ext import commands
+from collections import OrderedDict
+
+con = pymysql.connect(host='localhost', user="root", password="1219", db="GGonnyang", charset="utf8")
+cursor = con.cursor(pymysql.cursors.DictCursor)
 
 def load_Character(id):
-    result = "캐릭터"
-    return result
+    SQL = "SELECT * FROM player where id=%s"
+
+    cursor.execute(SQL, (id))
+    return cursor.fetchone()
 
 def HELP(cmd):
     embed=discord.Embed(title="[ RPG 도움말 ]", description="- [] 는 없어도 되는 인자. <>는 꼭 필요한 인자. | 는 '이거나' 라는 뜻.", color=0xe82626)
@@ -25,14 +33,28 @@ def isGoPlace(userLV, place):
 
 def getData(who, id):
         with open(f".\\Cogs\\RPG\\{who}\\{id}.json") as f:
-            data = json.load(f)
-            return (data['skills'], data['item'])
+            return json.load(f)
+
+def init_User(author):
+    SQL = "INSERT INTO player (id) VALUES (%s)"
+    cursor.execute(SQL, (author.id))
+    con.commit()
+
+    user_data = OrderedDict()
+    user_data['nickname'] = author.display_name
+    user_data['skills'] = {"기본공격":{"description":"상대방에게 무기를 휘두른다.", "cast-time":5, "damage":{'str':1.0, 'ap':0.0}}}
+    user_data['items'] = {'weapon':{'롱소드':{"description":"처음 시작하는 모험가에게 주는 검이다.", "stat":{"str":2}}}, 'item':{}}
+    user_data['using'] = '롱소드'
+    
+    with open(f'.\\Cogs\\RPG\\PLAYER\\{author.id}.json', 'w', encoding='utf-8') as make_file:
+        json.dump(user_data, make_file, ensure_ascii=False, indent="\t")
+    return 0
 
 ################################################################################
 class PLAYER:
     def __init__(self, info):
+        self.id = info['id']
         self.type=info["type"]
-        self.USER = info["info"]
         self.LV = info["exp"]//30
         self.NAME = info["name"]
         self.STR = info["str"]
@@ -40,14 +62,14 @@ class PLAYER:
         self.HP = 20 + int((self.STR * 0.5 + self.DEF * int(self.STR * 0.25)) * 2.5)
         self.MAX_HP = self.HP
         self.AP = info["ap"]
-        self.money = info["money"]
+        self.MONEY = info["money"]
         self.AGI = info["agi"]
+        self.DATA = getData("PLAYER" if self.type != "entity" else "MONSTER", self.id)
         if self.type == "entity":
             self.value = info["value"]
             self.attribute = info["attr"]
-            self.img_url = getData("MONSTER", info['id'])
         else:
-            self.skills, self.item, self.img_url = getData("PLAYER", info['id'])
+            self.USER = info["info"]
 
     def showStatus(self):
         embed=discord.Embed(color=0xd2e864)
@@ -91,6 +113,9 @@ class RPG(commands.Cog):
     async def Character_Create(self, ctx):
         if load_Character(ctx.author.id):
             return await ctx.send("당신은 벌써 캐릭터가 생성되어 있습니다!")
+
+        init_User(ctx.author)
+        
         return await ctx.send("캐릭터 생성을 완료했습니다!")
 
 
@@ -106,6 +131,7 @@ class RPG(commands.Cog):
     async def Adventure_Start(self, ctx, place):
         await ctx.message.delete()
         user = load_Character(ctx.author.id)
+        user['info'] = ctx.author
         if not user:
             return await ctx.send("캐릭터부터 생성해주세요! $캐릭터 생성")
         elif not isGoPlace(user[0], place):
