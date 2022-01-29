@@ -1,6 +1,4 @@
-from ast import Or
-from base64 import encode
-import discord, json, pymysql
+import discord, json, pymysql, random
 from discord.ext import commands
 from collections import OrderedDict
 
@@ -23,13 +21,18 @@ def HELP(cmd):
 
     return embed
 
-def getMonster(place): # {type:"entity"}
-    if place == "푸른 초원":
-        return "슬라임"
-    return "몬스터"
+def getMonster(place, value): # {type:"entity"}
+    SQL = "SELECT * FROM monster WHERE place = %s, value=%s"
+    cursor.execute(SQL, (place, value))
+    monster = random.choice(cursor.fetchall())
+    monster['type'] = "entity"
+    return monster
 
 def isGoPlace(userLV, place):
-    return True
+    SQL = "SELECT * FROM place WHERE place = %s"
+    cursor.execute(SQL, (place))
+    place = cursor.fetchone()
+    return True if place and userLV >= place['reqLV'] else False
 
 def getData(who, id):
         with open(f".\\Cogs\\RPG\\{who}\\{id}.json") as f:
@@ -59,16 +62,18 @@ class PLAYER:
         self.NAME = info["name"]
         self.STR = info["str"]
         self.DEF = info["def"]
-        self.HP = 20 + int((self.STR * 0.5 + self.DEF * int(self.STR * 0.25)) * 2.5)
         self.MAX_HP = self.HP
         self.AP = info["ap"]
         self.MONEY = info["money"]
         self.AGI = info["agi"]
         self.DATA = getData("PLAYER" if self.type != "entity" else "MONSTER", self.id)
         if self.type == "entity":
+            self.place = info['place']
             self.value = info["value"]
             self.attribute = info["attr"]
+            self.HP = info['hp']
         else:
+            self.HP = 20 + int((self.STR * 0.5 + self.DEF * int(self.STR * 0.25)) * 2.5)
             self.USER = info["info"]
 
     def showStatus(self):
@@ -137,7 +142,9 @@ class RPG(commands.Cog):
         elif not isGoPlace(user[0], place):
             return await ctx.send("없는 장소거나 캐릭터의 레벨이 부족합니다!")
 
-        ROOM = GAME(ctx.channel, user, getMonster(place))
+
+        ROOM = GAME(ctx.channel, user, getMonster("초원", 1))   # 테스트용 
+        #ROOM = GAME(ctx.channel, user, getMonster(place, random.choices([1,2,3,4,5], weights=[45, 25, 15, 10, 5])))
         
         
 
