@@ -13,8 +13,8 @@ def load_Character(id):
 
 def HELP(cmd):
     embed=discord.Embed(title="[ RPG 도움말 ]", description="- [] 는 없어도 되는 인자. <>는 꼭 필요한 인자. | 는 '이거나' 라는 뜻.", color=0xe82626)
-    if cmd == "캐릭터" or "모두":
-        embed.add_field(name="```[ 캐릭터 관련 명령어 ]```", inline=False)
+    if cmd == "캐릭터" or cmd == "모두":
+        embed.add_field(name="```[ 캐릭터 관련 명령어 ]```", value="", inline=False)
         embed.add_field(name="$캐릭터", value="- 캐릭터 명령어에 대한 명령어들을 봅니다.", inline=False)
         embed.add_field(name="$캐릭터 생성", value="- 캐릭터가 없다면 자신의 캐릭터를 생성합니다.", inline=False)
         embed.add_field(name="$캐릭터 정보 [유저ID]", value="- [유저ID]의 캐릭터 정보를 불러옵니다. 기본값은 자신의 ID", inline=False)
@@ -22,20 +22,20 @@ def HELP(cmd):
     return embed
 
 def getMonster(place, value): # {type:"entity"}
-    SQL = "SELECT * FROM monster WHERE place = %s, value=%s"
+    SQL = "SELECT * FROM monster WHERE place = %s and value=%s"
     cursor.execute(SQL, (place, value))
     monster = random.choice(cursor.fetchall())
     monster['type'] = "entity"
     return monster
 
 def isGoPlace(userLV, place):
-    SQL = "SELECT * FROM place WHERE place = %s"
+    SQL = "SELECT * FROM place WHERE name = %s"
     cursor.execute(SQL, (place))
     place = cursor.fetchone()
     return True if place and userLV >= place['reqLV'] else False
 
 def getData(who, id):
-        with open(f".\\Cogs\\RPG\\{who}\\{id}.json") as f:
+        with open(f".\\Cogs\\RPG\\{who}\\{id}.json", "rt", encoding="UTF8") as f:
             return json.load(f)
 
 def init_User(author):
@@ -53,21 +53,24 @@ def init_User(author):
         json.dump(user_data, make_file, ensure_ascii=False, indent="\t")
     return 0
 
+def addPlayerEXP(id, amount):
+    SQL = "UPDATE player SET exp = exp + %s WHERE id = %s"
+    cursor.execute(SQL, (amount, id))
+    return con.commit()
 ################################################################################
 class PLAYER:
     def __init__(self, info):
         self.id = info['id']
-        self.type=info["type"]
+        self.type = info["type"]
+        self.DATA = getData("PLAYER" if self.type != "entity" else "MONSTER", self.id)
         self.LV = info["exp"]//30
-        self.NAME = info["name"]
         self.STR = info["str"]
         self.DEF = info["def"]
-        self.MAX_HP = self.HP
         self.AP = info["ap"]
         self.MONEY = info["money"]
         self.AGI = info["agi"]
-        self.DATA = getData("PLAYER" if self.type != "entity" else "MONSTER", self.id)
         if self.type == "entity":
+            self.NAME = info["name"]
             self.place = info['place']
             self.value = info["value"]
             self.attribute = info["attr"]
@@ -75,10 +78,12 @@ class PLAYER:
         else:
             self.HP = 20 + int((self.STR * 0.5 + self.DEF * int(self.STR * 0.25)) * 2.5)
             self.USER = info["info"]
+            self.NAME = self.DATA['nickname']
+        self.MAX_HP = self.HP
 
     def showStatus(self):
         embed=discord.Embed(color=0xd2e864)
-        embed.set_thumbnail(url=f"{self.img_url}")
+        embed.set_thumbnail(url=f"{self.DATA['img_url']}")
         embed.add_field(name=f"{self.NAME}", value=f"Lv.{self.LV}", inline=False)
         embed.add_field(name="[ HP ]", value=f"{self.showHP()}", inline=False)
         return embed
@@ -90,11 +95,11 @@ class PLAYER:
         return f"{rate * ':red_square:'}{(10-rate) * ':white_large_square:'}\n( {self.HP} / {self.MAX_HP} )"
 
 class GAME:
-    async def __init__(self, channel, p1, p2):
-        self.channel = channel
+    def __init__(self, p1, p2):
         self.P1 = PLAYER(p1)
         self.P2 = PLAYER(p2)
 
+    async def init(self, channel):
         self.msg1 = await channel.send(embed=self.P2.showStatus())
         if self.P2.type != "entity":
             self.msg2 = await channel.send(embed=self.P1.showStatus())
@@ -106,15 +111,26 @@ class GAME:
 class RPG(commands.Cog):
     def __init__(self, APP):
         self.APP = APP
+
+    @commands.command(name="튜토리얼")
+    async def Tutorial(self, ctx):
+        await ctx.message.delete()
+        user = load_Character(ctx.author.id)
+        if not user:
+            return await ctx.send("캐릭터부터 생성해주세요! $캐릭터 생성")
         
-    @commands.group(name="캐릭터")
+        if user['exp'] == 0:
+            addPlayerEXP(ctx.author.id, 30)
+        return await ctx.send("튜토리얼 끝!")
+    @commands.group(name="캐릭터", pass_context=True)
     async def Character(self, ctx):
+        await ctx.message.delete()
         if not ctx.invoked_subcommand is None:
             return
         await ctx.message.delete()    
         return await ctx.author.send(embed=HELP("캐릭터"))
 
-    @Character.command(name="생성")
+    @Character.command(name="생성", pass_context=True)
     async def Character_Create(self, ctx):
         if load_Character(ctx.author.id):
             return await ctx.send("당신은 벌써 캐릭터가 생성되어 있습니다!")
@@ -125,28 +141,25 @@ class RPG(commands.Cog):
 
 
 
-    @commands.group(name="모험")
+    @commands.group(name="모험", pass_context=True)
     async def Adventure(self, ctx):
         await ctx.message.delete()
-        if not ctx.involked_subcommand is None:
+        if not ctx.invoked_subcommand is None:
             return
         return await ctx.author.send(embed=HELP("모험"))
 
-    @Adventure.command(name="시작")
-    async def Adventure_Start(self, ctx, place):
-        await ctx.message.delete()
+    @Adventure.command(name="시작", pass_context=True)
+    async def Adventure_Start(self, ctx):
         user = load_Character(ctx.author.id)
         user['info'] = ctx.author
         if not user:
             return await ctx.send("캐릭터부터 생성해주세요! $캐릭터 생성")
-        elif not isGoPlace(user[0], place):
+        elif not isGoPlace(user['exp']//30, "초원"):
             return await ctx.send("없는 장소거나 캐릭터의 레벨이 부족합니다!")
 
-
-        ROOM = GAME(ctx.channel, user, getMonster("초원", 1))   # 테스트용 
-        #ROOM = GAME(ctx.channel, user, getMonster(place, random.choices([1,2,3,4,5], weights=[45, 25, 15, 10, 5])))
-        
-        
+        ROOM = GAME(user, getMonster("초원", 1))   # 테스트용 
+        #ROOM = GAME(user, getMonster(place, random.choices([1,2,3,4,5], weights=[45, 25, 15, 10, 5])))
+        await ROOM.init(ctx.channel)
 
 
     
