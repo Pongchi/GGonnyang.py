@@ -76,14 +76,17 @@ class PLAYER:
             self.attribute = info["attr"]
             self.HP = info['hp']
         else:
-            self.HP = 20 + int((self.STR * 0.5 + self.DEF * int(self.STR * 0.25)) * 2.5)
+            self.HP = 20 + int((self.STR * 0.25 + self.DEF * 0.1) * 1.5)
             self.USER = info["info"]
             self.NAME = self.DATA['nickname']
         self.MAX_HP = self.HP
 
     def showStatus(self):
         embed=discord.Embed(color=0xd2e864)
-        embed.set_thumbnail(url=f"{self.DATA['img_url']}")
+        if self.type == "entity":
+            embed.set_thumbnail(url=f"{self.DATA['img_url']}")
+        else:
+            embed.set_thumbnail(url=f"{self.USER.avatar_url}")
         embed.add_field(name=f"{self.NAME}", value=f"Lv.{self.LV}", inline=False)
         embed.add_field(name="[ HP ]", value=f"{self.showHP()}", inline=False)
         return embed
@@ -96,15 +99,25 @@ class PLAYER:
 
 class GAME:
     def __init__(self, p1, p2):
+        self.ROUND = 0
         self.P1 = PLAYER(p1)
         self.P2 = PLAYER(p2)
 
     async def init(self, channel):
-        self.msg1 = await channel.send(embed=self.P2.showStatus())
-        if self.P2.type != "entity":
-            self.msg2 = await channel.send(embed=self.P1.showStatus())
+        self.channel = channel
+        self.msg1 = await self.channel.send(embed=self.P2.showStatus())
+        self.msg2 = await self.channel.send(embed=self.P1.showStatus())
 
-    
+    async def start(self):
+        winner = None
+        while self.ROUND <= 40:
+            break
+        return await self.channel.send(embed=self.end(winner))
+
+    def end(self, winner):
+        embed=discord.Embed(title="[ 전투 종료 ]", description="끝남.", color=0xe82626)
+        return embed
+
 ##########################################################################################
 
 
@@ -126,8 +139,7 @@ class RPG(commands.Cog):
     async def Character(self, ctx):
         await ctx.message.delete()
         if not ctx.invoked_subcommand is None:
-            return
-        await ctx.message.delete()    
+            return 
         return await ctx.author.send(embed=HELP("캐릭터"))
 
     @Character.command(name="생성", pass_context=True)
@@ -138,7 +150,6 @@ class RPG(commands.Cog):
         init_User(ctx.author)
         
         return await ctx.send("캐릭터 생성을 완료했습니다!")
-
 
 
     @commands.group(name="모험", pass_context=True)
@@ -160,6 +171,8 @@ class RPG(commands.Cog):
         ROOM = GAME(user, getMonster("초원", 1))   # 테스트용 
         #ROOM = GAME(user, getMonster(place, random.choices([1,2,3,4,5], weights=[45, 25, 15, 10, 5])))
         await ROOM.init(ctx.channel)
+        
+        return await ROOM.start()
 
 
     
