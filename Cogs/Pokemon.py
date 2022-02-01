@@ -1,10 +1,17 @@
-from re import S
+import discord, pymysql, json
 from discord.ext import commands
+
+con = pymysql.connect(host='localhost', user="root", password="1219", db="GGonnyang", charset="utf8")
+cursor = con.cursor(pymysql.cursors.DictCursor)
+
 ######################################################################################
-def getData(type, id):
+def getData(type, no):
     if type == "pokemon":
-        return "DB 값"
-    return "트레이너 json 으로"
+        SQL = "SELECT * FROM Pokemon WHERE no=%s"
+        cursor.execute(SQL, (no))
+        return cursor.fetchone()
+    with open(f".\\Cogs\\TRAINER\\{no}.json", "rt", encoding="UTF8") as f:
+            return json.load(f)
 
 ######################################################################################
 class TRAINER:
