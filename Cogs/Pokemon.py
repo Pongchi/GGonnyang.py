@@ -1,5 +1,6 @@
 import discord, pymysql, json
 from discord.ext import commands
+from collections import OrderedDict
 
 con = pymysql.connect(host='localhost', user="root", password="1219", db="GGonnyang", charset="utf8")
 cursor = con.cursor(pymysql.cursors.DictCursor)
@@ -13,6 +14,20 @@ def getData(type, no):
     with open(f".\\Cogs\\TRAINER\\{no}.json", "rt", encoding="UTF8") as f:
             return json.load(f)
 
+def init_User(author, pokemon):
+    SQL = "INSERT INTO Trainer (id, money) VALUES (%s, %s)"
+    cursor.execute(SQL, (author.id, 1000))
+    con.commit()
+
+    user_data = OrderedDict()
+    user_data['nickname'] = author.display_name
+    user_data['Select_Pokemon'] = pokemon
+    user_data['Pokemons'] = {}
+    user_data['Inventory'] = {'도구':0, '물약':0}
+    
+    with open(f'.\\Cogs\\TRAINER\\{author.id}.json', 'w', encoding='utf-8') as make_file:
+        json.dump(user_data, make_file, ensure_ascii=False, indent="\t")
+    return 0
 ######################################################################################
 class TRAINER:
     def __init__(self, info):
@@ -50,7 +65,9 @@ class POKEMON_GAME(commands.Cog):
 
     @Pokemon.command(name="스타터포켓몬")
     async def Pokemon_Starting(self, ctx):
-        return await ctx.send("스타터 포켓몬 선택")
+        # 여기서 선택해서 문자열 받아오고
+        init_User(ctx.author, "피카츄")
+        return await ctx.send("포켓몬 세계에 오신 것을 환영합니다.")
     
 def setup(APP):
     APP.add_cog(POKEMON_GAME(APP))
