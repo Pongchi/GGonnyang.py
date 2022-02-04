@@ -1,17 +1,23 @@
-import discord, pymysql, json
+import discord, pymysql, json, asyncio
 from discord.ext import commands
+from discord_components import *
 from collections import OrderedDict
 
 con = pymysql.connect(host='localhost', user="root", password="1219", db="GGonnyang", charset="utf8")
 cursor = con.cursor(pymysql.cursors.DictCursor)
 
 ######################################################################################
+def Select_Trainer(id):
+    SQL = "SELECT * FROM Trainer WHERE id=%s"
+    cursor.execute(SQL, (id))
+    return cursor.fetchone()
+
 def getData(type, no):
     if type == "pokemon":
         SQL = "SELECT * FROM Pokemon WHERE no=%s"
         cursor.execute(SQL, (no))
         return cursor.fetchone()
-    with open(f".\\Cogs\\TRAINER\\{no}.json", "rt", encoding="UTF8") as f:
+    with open(f".\\Cogs\\POKEMON\\TRAINER\\{no}.json", "rt", encoding="UTF8") as f:
             return json.load(f)
 
 def init_User(author, pokemon):
@@ -25,9 +31,32 @@ def init_User(author, pokemon):
     user_data['Pokemons'] = {}
     user_data['Inventory'] = {'도구':0, '물약':0}
     
-    with open(f'.\\Cogs\\TRAINER\\{author.id}.json', 'w', encoding='utf-8') as make_file:
+    with open(f'.\\Cogs\\POKEMON\\TRAINER\\{author.id}.json', 'w', encoding='utf-8') as make_file:
         json.dump(user_data, make_file, ensure_ascii=False, indent="\t")
     return 0
+
+def SELECT_STARTING_EMBED(list):
+    embed=discord.Embed(title="[ 스타팅포켓몬 선택 ]", color=0xe21818)
+    for _type in list:
+        embed.add_field(name=f"타입 : {_type}", inline=False)
+        for pokemon in list[_type]:
+            embed.add_field(name=f"{pokemon.name}", value="설명 : {pokemon.description}", inline=False)
+    return embed
+
+async def SELECT_STARTING(ctx):
+    with open(f".\\Cogs\\POKEMON\\Starting_Pokemons.json", "rt", encoding="UTF8") as f:
+            starting = json.load(f)
+    STARTING = [[], [], []]
+    msg = await msg.send(embed=SELECT_STARTING_EMBED(starting), components=STARTING)
+    try:
+        interaction = await self.APP.wait_for("button_click", check = lambda i: ctx.author == i.author, timeout=60)
+    except asyncio.TimeoutError:
+        await msg.edit(content="60초동안 아무 반응이 없어 스타팅포켓몬 연결이 종료되었습니다. 다시 스타팅 포켓몬을 선택해주세요.")
+        return False
+    else:
+        await interaction.edit_origin(content=f"{interaction.component.label} 을 선택하셨습니다!")
+
+    return interaction.component.label
 ######################################################################################
 class TRAINER:
     def __init__(self, info):
@@ -63,11 +92,17 @@ class POKEMON_GAME(commands.Cog):
             return
         return await ctx.send("도움말.")
 
-    @Pokemon.command(name="스타터포켓몬")
+    @Pokemon.command(name="스타팅포켓몬")
     async def Pokemon_Starting(self, ctx):
-        # 여기서 선택해서 문자열 받아오고
-        init_User(ctx.author, "피카츄")
-        return await ctx.send("포켓몬 세계에 오신 것을 환영합니다.")
+        if Select_Trainer(ctx.author.id):
+            return await ctx.send("너는 벌써 받았다구!")
+
+        selecting = await SELECT_STARTING(ctx)
+        if not selecting:
+            return
+        
+        init_User(ctx.author, selecting)
+        return awaix msg.edit(content="포켓몬 세계에 오신 것을 환영합니다.")
     
 def setup(APP):
     APP.add_cog(POKEMON_GAME(APP))
