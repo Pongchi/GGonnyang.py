@@ -1,4 +1,4 @@
-import discord, pymysql, json, asyncio
+import discord, pymysql, json, asyncio, random
 from discord.ext import commands
 from discord_components import *
 from collections import OrderedDict
@@ -27,9 +27,21 @@ def init_User(author, pokemon):
 
     user_data = OrderedDict()
     user_data['nickname'] = author.display_name
-    user_data['Select_Pokemon'] = pokemon
-    user_data['Pokemons'] = {}
-    user_data['Inventory'] = {'도구':0, '물약':0}
+    user_data['Select_Pokemon'] = pokemon[1]
+    user_data['Pokemons'] = {pokemon[1]: {
+        "No" : pokemon[0],
+        "nickname" : pokemon[1],
+        "Lv" : 1,
+        "Stat" : {
+            "HP"  : random.randint(0, 31),
+            "STR" : random.randint(0, 31),
+            "DEF" : random.randint(0, 31),
+            "SSTR": random.randint(0, 31),
+            "SDEF": random.randint(0, 31),
+            "DEX" : random.randint(0, 31)
+        }
+    }}
+    user_data['Inventory'] = {'도구':{}, '물약':{}}
     
     with open(f'.\\Cogs\\POKEMON\\TRAINER\\{author.id}.json', 'w', encoding='utf-8') as make_file:
         json.dump(user_data, make_file, ensure_ascii=False, indent="\t")
@@ -38,7 +50,6 @@ def init_User(author, pokemon):
 def SELECT_STARTING_EMBED(list):
     embed=discord.Embed(title="[ 스타팅포켓몬 선택 ]", color=0xe21818)
     for _type in list:
-        embed.add_field(name=f"============[ {_type} 타입 ]=============", value=f".", inline=False)
         for pokemon in list[_type]:
             embed.add_field(name=f"{pokemon}", value=f"설명 : {list[_type][pokemon]['description']}", inline=True)
     return embed
@@ -46,9 +57,9 @@ def SELECT_STARTING_EMBED(list):
 async def SELECT_STARTING(APP, ctx):
     with open(f".\\Cogs\\POKEMON\\Starting_Pokemons.json", "rt", encoding="UTF8") as f:
             starting = json.load(f)
-    STARTING = [[Button(label=i, style=ButtonStyle.green, custom_id=starting["풀"][i]['name']) for i in starting['풀']], 
-                [Button(label=i, style=ButtonStyle.red, custom_id=starting["불"][i]['name']) for i in starting['불']], 
-                [Button(label=i, style=ButtonStyle.blue, custom_id=starting["물"][i]['name']) for i in starting['물']]]
+    STARTING = [[Button(label=i, style=ButtonStyle.green, custom_id=starting["풀"][i]['No']) for i in starting['풀']], 
+                [Button(label=i, style=ButtonStyle.red, custom_id=starting["불"][i]['No']) for i in starting['불']], 
+                [Button(label=i, style=ButtonStyle.blue, custom_id=starting["물"][i]['No']) for i in starting['물']]]
     
     msg = await ctx.send(embed=SELECT_STARTING_EMBED(starting), components=STARTING)
     try:
@@ -59,7 +70,7 @@ async def SELECT_STARTING(APP, ctx):
     else:
         await interaction.edit_origin(content=f"{interaction.component.label} 을 선택하셨습니다!")
 
-    return interaction.component.label
+    return (interaction.custom_id, interaction.component.label)
 ######################################################################################
 class TRAINER:
     def __init__(self, info):
@@ -70,7 +81,6 @@ class TRAINER:
         
 class POKEMON:
     def __init__(self, info):
-        self.NO = info['No']
         self.LV = info['Lv']
         self.NAME = info['Name']
         self.ATTR1 = info['Attr1']
