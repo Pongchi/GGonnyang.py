@@ -7,6 +7,9 @@ con = pymysql.connect(host='localhost', user="root", password="1219", db="GGonny
 cursor = con.cursor(pymysql.cursors.DictCursor)
 
 ######################################################################################
+def Wild_Pokemon(place):
+    return "야생 포켓몬"
+
 def Select_Trainer(id):
     SQL = "SELECT * FROM Trainer WHERE id=%s"
     cursor.execute(SQL, (id))
@@ -93,6 +96,14 @@ class POKEMON:
         self.SSTR = (((self.DATA['SSTR'] * 2) + info['Stat']['SSTR']) * self.LV) + 5
         self.SDEF = (((self.DATA['DEF'] * 2) + info['Stat']['SDEF']) * self.LV) + 5
         self.DEX = (((self.DATA['DEX'] * 2) + info['Stat']['DEX']) * self.LV) + 5
+
+class HOST:
+    def __init__(self, Trainer1, Trainer2):
+        self.T1 = TRAINER(Trainer1)
+        if Trainer2['type'] == "wild":
+            self.T2 = POKEMON(Trainer2)
+        else:
+            self.T2 = TRAINER(Trainer2)
 ######################################################################################
 class POKEMON_GAME(commands.Cog):
     def __init__(self, APP):
@@ -116,6 +127,17 @@ class POKEMON_GAME(commands.Cog):
         
         init_User(ctx.author, selecting)
         return await ctx.send("포켓몬 세계에 오신 것을 환영합니다.")
+
+    @Pokemon.command(name="모험")
+    async def Pokemon_Start(self, ctx, place):
+        Trainer = Select_Trainer(ctx.author.id)
+        if not Trainer:
+            return await ctx.send("너는 스타팅 포켓몬을 먼저 받아와. $포켓몬 스타팅")
+
+        Wild_P = Wild_Pokemon(place)
+        HOSTING = HOST(Trainer, Wild_P)
+        
+        
     
 def setup(APP):
     APP.add_cog(POKEMON_GAME(APP))

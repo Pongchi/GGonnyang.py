@@ -14,7 +14,7 @@ class PLAYER:
         self.USER = author
         self.HP = 40
         self.MAX_HP = self.HP
-        self.DAMAGE= 8
+        self.DAMAGE= 20
         self.RSP = ""
 
 class GAME:

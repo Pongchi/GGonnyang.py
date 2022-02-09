@@ -11,7 +11,7 @@ class Casper(commands.Cog):
     
     @tasks.loop(minutes=1.0, count=11)
     async def Countdown(self, ctx):
-        await ctx.send(f"발표 시간이 {self.cnt}분 경과했습니다.", tts=True)
+        await ctx.send(f"발표 시간이 {self.cnt}분 경과했습니다.")
         self.cnt += 1
         if self.cnt == 11:
             self.cnt = 0
