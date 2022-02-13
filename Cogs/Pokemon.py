@@ -42,7 +42,8 @@ def init_User(author, pokemon):
             "SSTR": random.randint(0, 31),
             "SDEF": random.randint(0, 31),
             "DEX" : random.randint(0, 31)
-        }
+        },
+        "Skills" : pokemon['Skills']
     }}
     user_data['Inventory'] = {'도구':{}, '물약':{}}
     
@@ -84,11 +85,11 @@ class TRAINER:
         
 class POKEMON:
     def __init__(self, info):
+        self.DATA = getData('pokemon', info['No'])
         self.LV = info['Lv']
         self.NAME = info['Name']
-        self.ATTR1 = info['Attr1']
-        self.ATTR2 = info['Attr2']
-        self.DATA = getData('pokemon', info['No'])
+        self.ATTR1 = self.DATA['Attr1']
+        self.ATTR2 = self.DATA['Attr2']
         self.HP = (((self.DATA['HP'] * 2) + info['Stat']['HP']) * self.LV/100) + 10 + self.LV
         self.MAX_HP = self.HP
         self.STR = (((self.DATA['STR'] * 2) + info['Stat']['STR']) * self.LV) + 5
