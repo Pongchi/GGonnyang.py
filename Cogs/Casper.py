@@ -9,12 +9,10 @@ class Casper(commands.Cog):
         self.seq = -1
         self.cnt = 0
     
-    @tasks.loop(minutes=1.0, count=11)
+    @tasks.loop(minutes=1.0)
     async def Countdown(self, ctx):
         await ctx.send(f"발표 시간이 {self.cnt}분 경과했습니다.")
         self.cnt += 1
-        if self.cnt == 11:
-            self.cnt = 0
 
     def SeqEmbed(self):
         if len(self.presenter):
@@ -42,7 +40,8 @@ class Casper(commands.Cog):
                 return await ctx.send("벌써 누가 발표를 하고있습니다. 다른 사람의 발표를 끝내고 시작해주세요.")
             elif not len(self.presenter):
                 return await ctx.send("발표 순서를 먼저 정해주세요!")
-                
+            
+            self.cnt = 0
             await ctx.send(f"발표를 시작합니다! 이번 발표는 {self.presenter[self.seq].mention} 입니다.")
             return self.Countdown.start(ctx)
         elif seq == "끝":
