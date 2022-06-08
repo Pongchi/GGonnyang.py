@@ -6,9 +6,10 @@ intents = discord.Intents.all()
 APP = commands.Bot(command_prefix="$", intents=intents)
 abs_cogs_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), "Cogs")
 
-for filename in os.listdir(abs_cogs_path):
-    if filename.endswith(".py"):
-        APP.load_extension(f"Cogs.{filename[:-3]}")
+extensions = ["가위바위보", "Casper", "Fun", "Utility"]
+def load_extensions():
+    for extension in extensions:
+        APP.load_extension(f"Cogs.{extension}")
 
 @APP.event
 async def on_ready():
@@ -16,8 +17,8 @@ async def on_ready():
     print(APP.user.name)
     print(APP.user.id)
     print("=============")
-    game = discord.Game("퐁치 짝사랑")
-    await APP.change_presence(status=discord.Status.online, activity=game)
+    await APP.change_presence(status=discord.Status.online, activity=discord.Activity(type=discord.ActivityType.watching, name="범준이 얼굴"))
+    load_extensions()
 
 @APP.event
 async def on_command_error(ctx, error):
@@ -33,10 +34,9 @@ async def on_command_error(ctx, error):
 @APP.command(name="reload")
 async def reload(ctx, extension=None):
     if extension is None:
-        for filename in os.listdir(abs_cogs_path):
-            if filename.endswith(".py"):
-                APP.unload_extension(f"Cogs.{filename[:-3]}")
-                APP.load_extension(f"Cogs.{filename[:-3]}")
+        for _extension in extensions:
+            APP.unload_extension(f"Cogs.{_extension}")
+            APP.load_extension(f"Cogs.{_extension}")
         return await ctx.send(":white_check_mark: 모든 Extension 을 리로드함.")
     else:
         try:
@@ -46,7 +46,7 @@ async def reload(ctx, extension=None):
             return await ctx.send(f"{extension} 을 리로드할 수 없습니다.\n{e}")
         return await ctx.send(f":white_check_mark: {extension}을(를) 리로드함.")
 
-f = open("C:\\Users\\PC\Desktop\\Casper\\Git\\GGonnyang\\token.txt", "r")
+f = open("C:\\Users\\Pongc\\Desktop\\Develop\\GGonnyang.py\\token", "r")
 token = f.readline()
 f.close()
 APP.run(token)

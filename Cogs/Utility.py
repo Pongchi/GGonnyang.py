@@ -10,7 +10,10 @@ class Utility(commands.Cog):
 
     @commands.command(name="채팅청소")
     async def clearChatting(self, ctx, amount):
-        amont = amount if amount <= 100 else 100
+        if not amount.isdigit():
+            return await ctx.channel.send(f"숫자를 적어주세요.")
+        amount = int(amount)
+        amount = amount if amount <= 100 else 100
         if ctx.author.guild_permissions.manage_messages:
             try:
                 await ctx.channel.purge(limit=int(amount))
