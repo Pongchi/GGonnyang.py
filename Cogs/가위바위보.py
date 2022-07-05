@@ -1,7 +1,5 @@
 import discord, asyncio, time, random
-from discord_components import *
 from discord.ext import commands
-
 
 def showHP(HP, MAX_HP):
     if HP <= 0:
@@ -55,9 +53,9 @@ class RSP(commands.Cog):
     @commands.command(name="가위바위보")
     async def RSP_Main(self, ctx):
         await ctx.message.delete()
-        msg = await ctx.send(f"{ctx.author.mention} -> 상대를 기다리고있습니다...", components=[Button(label="가위바위보", style=ButtonStyle.green)])
+        msg = await ctx.send(f"{ctx.author.mention} -> 상대를 기다리고있습니다...", components=[Button(label="가위바위보")])
         try:
-            interaction = await self.APP.wait_for("button_click", check = lambda i: i.message.id == msg.id, timeout=20) #  and ctx.author != i.author
+            interaction = await self.APP.wait_for("button")
         except asyncio.TimeoutError:
             await msg.edit(content=f"{ctx.author.mention} -> 가위바위보 상대를 기다리다 지쳤습니다...")
             time.sleep(5)
